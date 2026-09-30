@@ -125,13 +125,13 @@ struct Line {
         // TODO: write this code
         return p;
     }
-    bool Crosses(Line other, Point2D &crossingPoint) const {
+    bool Crosses(Line /*other*/, Point2D /*&crossingPoint*/) const {
         // TODO: write this code
         return false;
     }
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Line &l) {
+inline std::ostream &operator<<(std::ostream &os, const Line /*&l*/) {
     // TODO: write this code
     return os;
 }
