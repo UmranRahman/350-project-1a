@@ -18,9 +18,8 @@ GameEngine::GameEngine(unsigned int width, unsigned int height, const std::strin
     mFont = std::make_shared<sf::Font>();
     
     // Sample font loading code
-    if (!mFont->openFromMemory(&_font, _font_len))
-    {
-    	fprintf(stderr, "WARNING: Font did not load.\n");
+    if (!mFont->openFromMemory(&_font, _font_len)) {
+        fprintf(stderr, "WARNING: Font did not load.\n");
     }
 
     mDrawContext = std::make_unique<DrawContext>(mWindow, mFont);
@@ -58,6 +57,27 @@ void GameEngine::ProcessEvents(GameContext *context) {
     }
 }
 
+// AI-assisted: pair loop and bounds-copy idea explained by AI
+void GameEngine::ProcessCollisions(GameContext *) {
+    std::vector<std::shared_ptr<CollisionObject>> collided;
+    for (auto &object: mGameObjects){
+        auto ball = std::dynamic_pointer_cast<CollisionObject>(object);
+        if (ball) {
+            collided.push_back(ball);
+        }
+    }
+    for (int i = 0; i < collided.size(); ++i) {
+        for (int j = 0; j < collided.size(); ++j) {
+        Rect a = collided[i]->GetBounds();                // COPIES, not references (demo reuses one static Rect)
+        Rect b = collided[j]->GetBounds();
+        if (Overlaps(a, b)) {
+            collided[i]->CollisionEnter(collided[j]);
+            collided[j]->CollisionEnter(collided[i]);
+        }
+    }
+    }
+}
+
 /**
  * @method Run
  * @arguments None
@@ -69,26 +89,64 @@ void GameEngine::Run() {
     while (mWindow->isOpen())  // window is open
     {
         // 0. Remove any objects that are now dead
-        
+        // AI-assisted: erase-remove idiom explained by AI
+        mGameObjects.erase(
+            std::remove_if(
+                mGameObjects.begin(),
+                mGameObjects.end(),
+                [](const std::shared_ptr<GameObject> &object) {
+                    return !object->IsAlive();
+                }
+            ), mGameObjects.end()
+        );
         // 1. Activate and initialize any objects added during the last frame
+        // AI-assisted: swap idea explained by AI
+        std::vector<std::shared_ptr<GameObject>> batch;
+        batch.swap(mPendingObjects);
+        for (auto &object : batch) {
+            mGameObjects.push_back(object);
+            object->Initialize(&context);
+        }
 
         // 2. Process events
         ProcessEvents(&context);
-        mWindow->clear(sf::Color::Black);
-        mWindow->display();
+        
+        
         // 3. Update game objects
+        for (auto &object : mGameObjects) {
+            object->Update(&context);
+        }
 
         // 4. Process collision events
+        ProcessCollisions(&context);
 
         // 5. Late updates
+        for (auto &object : mGameObjects) {
+            object->LateUpdate(&context);
+        }
 
         // Clear window
+        mWindow->clear();
 
         // 6. Render background
+        // AI-assisted: dynamic_pointer_cast explained by AI
+        for (auto &object : mGameObjects) {
+            auto graphic = std::dynamic_pointer_cast<GraphicsObject>(object);
+            if (graphic) {
+                graphic->RenderBackground(&context);
+            }
+        }
 
         // 7. Render foreground
+        for (auto &object : mGameObjects) {
+            auto graphic = std::dynamic_pointer_cast<GraphicsObject>(object);
+            if (graphic) {
+                graphic->RenderForeground(&context);
+            }
+        }
 
         // Actually render to window
+        mWindow->display();
     }
 }
 

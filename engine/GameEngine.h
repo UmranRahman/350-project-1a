@@ -44,7 +44,7 @@ private:
     std::vector<std::shared_ptr<GameObject>> mPendingObjects;
 
     void ProcessEvents(GameContext *context);
-    void ProcessCollisions(GameContext *context);
+    void ProcessCollisions(GameContext *);
 };
 
 
