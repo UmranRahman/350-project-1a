@@ -66,8 +66,8 @@ void GameEngine::ProcessCollisions(GameContext *) {
             collided.push_back(ball);
         }
     }
-    for (int i = 0; i < collided.size(); ++i) {
-        for (int j = 0; j < collided.size(); ++j) {
+    for (size_t i = 0; i < collided.size(); ++i) {
+        for (size_t j = i+1; j < collided.size(); ++j) {
         Rect a = collided[i]->GetBounds();                // COPIES, not references (demo reuses one static Rect)
         Rect b = collided[j]->GetBounds();
         if (Overlaps(a, b)) {

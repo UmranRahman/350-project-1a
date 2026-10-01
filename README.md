@@ -65,3 +65,27 @@ I also pasted my MathUtil.h several times for review, and pasted compiler and te
 Prompts (excerpts): "ok seriously i did tell you NO code unless we need it, i dont want ai plagerism"; "well thats why im asking for your help and i said code examples can help"; "wait so direction and offset what vector formula is this"; "im in a slump for line do i need it".
 
 Reflection: AI's first answer dumped a full implementation after I'd asked for guidance only; I discarded it and wrote the file myself from the SFML headers. AI's explanation of perpendicular vectors (dot product equals zero) was the useful part. Bugs I made that I fixed: `sf::Color(c)` conversion, empty `draw()` calls, `LineStrip` ignores width, a variable shadowing the color parameter, and an offset along the line instead of perpendicular to it.
+
+### GameEngine.h / GameEngine.cpp
+
+| Item | Origin |
+|---|---|
+| Class declaration, method signatures, stub constructor/Run comments | Course-provided template |
+| Member types: `shared_ptr` window/font, `unique_ptr` DrawContext, two vectors of `shared_ptr<GameObject>` | My first guess was wrong (window/font unique, objects weak). AI corrected it using the handout and my lecture notes' ownership rules |
+| Constructor, destructor, `AddGameObject` | Written by me (window creation fixed after AI pointed out I had made a local window instead of setting `mWindow`) |
+| `ProcessEvents` | Written by me with AI's explanation of the SFML 3 event pattern |
+| `Run()` steps 0-1 (erase-remove, pending-list swap) | AI explained the idioms and why they are needed; I wrote the code. AI also provided a complete reference version of `Run()` earlier in the chat, which I did not use as-is |
+| `Run()` steps 3-7 (update loops, two render loops with `dynamic_pointer_cast`) | Written by me after AI's explanation of the cast and why there are two loops |
+| `ProcessCollisions` | AI provided a code skeleton (collect collidable objects, pair loop, bounds copy, `Overlaps`, notify both). My first version had the inner loop starting at 0, which caused self-collisions and double notifications; AI found that and I changed it to start at `i + 1` |
+
+### main.cpp
+Course-provided (ball demo and Galaga branch). The `mBallSsample` flag selects the mode: `true` runs the ball demo, `false` runs Galaga. <Galaga branch edited by me to add 40 enemies, once done.>
+
+### Galaga (Enemy, Bullet, Player, Stars)
+<fill in as each is done. Stars is course-provided and unchanged.>
+
+### Reflection (engine)
+- **What worked:** Explanations of the erase-remove idiom, the pending-list swap, and the pair loop were the most useful AI contributions. The ball demo running correctly confirmed the engine loop order, add/remove, and collision notification.
+- **What AI got wrong or caused:** It gave full code several times after I asked for guidance only, and it first suggested a constructor-order for `DrawContext` that I had to adjust. The inner-loop bug in `ProcessCollisions` was mine, and AI caught it.
+- **Bugs I fixed myself:** local window instead of the member, `erase` called with one argument (undefined behavior), duplicated `LateUpdate`, and the loop-start bug above.
+- **What I learned:** shared ownership vs. a single owner, why objects are added through a pending list, and why bounds must be copied.
