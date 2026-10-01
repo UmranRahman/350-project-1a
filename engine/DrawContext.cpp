@@ -77,11 +77,11 @@ void DrawContext::DrawLine(Point2D from, Point2D to, float width, RGBColor c) {
     Point2D p1 = from + offset;
     shape.setPoint(0, {p1.x, p1.y});
     Point2D p2 = to + offset;
-    shape.setPoint(1, {{p2.x, p2.y}});
+    shape.setPoint(1, {p2.x, p2.y});
     Point2D p3 = to - offset;
-    shape.setPoint(2, {{p3.x, p3.y}});
+    shape.setPoint(2, {p3.x, p3.y});
     Point2D p4 = from - offset;
-    shape.setPoint(3, {{p4.x, p4.y}});
+    shape.setPoint(3, {p4.x, p4.y});
     shape.setFillColor(sf::Color(c.r, c.g, c.b));
     mWindow->draw(shape);
 }

@@ -11,6 +11,7 @@ class GameObject;
 class EngineView {
 public:
     virtual void AddGameObject(std::shared_ptr<GameObject> gameObject) = 0;
+    virtual ~EngineView() = default;
 };
 
 }  // namespace CMPUT350

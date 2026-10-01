@@ -11,6 +11,13 @@ class GameEngine;
 #include "MathUtil.h"
 #include <SFML/Graphics.hpp>
 
+#include "DrawContext.h"
+#include "GameContext.h"
+#include "CollisionObject.h"
+#include <memory>
+#include <vector>
+#include <string>
+
 namespace CMPUT350 {
 
 class DrawContext;
@@ -30,9 +37,17 @@ public:
     void Run();
 
 private:
-    //	std::shared_ptr<sf::RenderWindow> mWindow;
-    //	std::shared_ptr<sf::Font> mFont;
+    std::shared_ptr<sf::RenderWindow> mWindow;
+    std::shared_ptr<sf::Font> mFont;
+    std::unique_ptr<DrawContext> mDrawContext;
+    std::vector<std::shared_ptr<GameObject>> mGameObjects;
+    std::vector<std::shared_ptr<GameObject>> mPendingObjects;
+
+    void ProcessEvents(GameContext *context);
+    void ProcessCollisions(GameContext *context);
 };
+
+
 
 }  // namespace CMPUT350
 
