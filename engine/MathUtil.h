@@ -83,6 +83,17 @@ struct Point2D {
         // TODO: write this code
         return x*b.x + y*b.y;
     }
+
+    /**
+    * @brief   2D cross product of this vector with b (a single number).
+    * @param   b The second vector.
+    * @return  x*b.y - y*b.x. Zero when the vectors are parallel.
+    * AI-ASSISTED: explained | AI did: pointed out the handout lists a member Cross | I did: wrote it
+    */
+    float Cross(Point2D b) const {
+       return x * b.y - y * b.x;
+    }
+
     static float Dot(Point2D a, Point2D b) {
         // TODO: write this code
         return a.x*b.x + a.y*b.y;
@@ -117,23 +128,68 @@ struct Line {
 
     Line(Point2D p1 = {0, 0}, Point2D p2 = {0, 0}) : p1(p1), p2(p2) {}
     Line(float x1, float y1, float x2, float y2) : p1(x1, y1), p2(x2, y2) {}
+    
+    /**
+     * @brief   Length of the segment from p1 to p2.
+     * @return  Distance between the endpoints.
+     * AI-ASSISTED: explained | AI did: pointed out that Distance takes the other point as an argument | I did: wrote it
+     */
     float Length() const {
         // TODO: write this code
-        return 0;
+        return p1.Distance(p2);
     }
+
+    /**
+     * @brief   Finds the point on this segment closest to p.
+     * @param   p The point to measure from.
+     * @return  The nearest point on the segment, clamped to p1 or p2 when the perpendicular falls outside it.
+     * AI-ASSISTED: skeleton | AI did: explained the projection idea (lecture 6) with a worked table and a skeleton with
+     *              blanks, and suggested the zero-length guard | I did: wrote the code
+     */
     Point2D ClosestPoint(const Point2D &p) const {
         // TODO: write this code
-        return p;
+        Point2D ab = p2 - p1;
+        Point2D ap = p - p1; 
+        float abDot = ab.Dot(ab);
+        if (abDot == 0.0) return p1;
+        float t = ab.Dot(ap)/abDot;
+        if (t < 0) t = 0;
+        if (t > 1) t = 1;
+        return (p1 + ab*t);
     }
-    bool Crosses(Line /*other*/, Point2D /*&crossingPoint*/) const {
+
+    /**
+     * @brief   Tests whether this segment crosses another, and where.
+     * @param   other The second segment.
+     * @param   crossingPoint Output: set to the intersection point only when the function returns true.
+     * @return  true if the segments cross within both of their lengths; false if they miss or are parallel.
+     * AI-ASSISTED: skeleton | AI did: gave the t/u formulas (lecture 6) as a skeleton and pointed out three bugs in my
+     *              first version (wrong vector in u, crossingPoint never set properly, exact comparison to zero) |
+     *              I did: wrote it and fixed them
+     */
+    bool Crosses(Line other, Point2D &crossingPoint) const {
         // TODO: write this code
+        Point2D P = p2 - p1;
+        Point2D Q = other.p2 - other.p1;
+        float crossPQ = Point2D::Cross(P, Q);
+
+        if (std::fabs(crossPQ) < 0.000001f) return false;       // parallel, AI suggested to avoid errors
+
+        float t = Point2D::Cross((other.p1 - p1), Q) / crossPQ;
+        float u = Point2D::Cross((other.p1 - p1), P) / crossPQ;
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+            crossingPoint = p1 + P * t;                           // only set on a hit
+            return true;
+        }
         return false;
     }
 };
 
-inline std::ostream &operator<<(std::ostream &os, const Line /*&l*/) {
+// AI-ASSISTED: explained | AI did: noted 1b requires the Circle printer and that Line's was an empty stub |
+//              I did: wrote both
+inline std::ostream &operator<<(std::ostream &os, const Line &l) {
     // TODO: write this code
-    return os;
+    return os << l.p1 << " -> " << l.p2;
 }
 
 struct Circle {
@@ -144,6 +200,12 @@ struct Circle {
 
     Circle(float x, float y, float r) : center(x, y), radius(r) {}
 };
+
+// AI-ASSISTED: explained | AI did: noted 1b requires the Circle printer and that Line's was an empty stub |
+//              I did: wrote both
+inline std::ostream &operator<<(std::ostream &os, const Circle &c) {
+    return os << c.center << " r=" << c.radius;
+}
 
 struct Rect {
     Point2D topLeft;
