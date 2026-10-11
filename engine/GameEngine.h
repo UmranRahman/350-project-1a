@@ -16,6 +16,8 @@ namespace CMPUT350 {
 #include <memory>
 #include <vector>
 #include <string>
+#include <unordered_map>
+#include "Keyboard.h"
 
 #include "NotificationManager.h"
 
@@ -33,6 +35,17 @@ public:
 
     void AddGameObject(std::shared_ptr<GameObject> gameObject) override;
 
+
+    // Key notification installers and object iterators (EngineView interface, 1b handout).
+    // AI-ASSISTED: explained | AI did: said these six pure virtuals from the handout must be overridden here with const/override on the iterators and the same signatures as EngineView | I did: wrote the declarations
+    void InstallKeyDownNotification(int key, const std::string &notification) override;
+    void InstallKeyUpNotification(int key, const std::string &notification) override;
+    const_iterator cbegin() const override;
+    const_iterator cend() const override;
+    const_iterator begin() const override;
+    const_iterator end() const override;
+
+
     void Run();
 
 private:
@@ -49,10 +62,14 @@ private:
 
     void ProcessEvents(GameContext *context);
     void ProcessCollisions(GameContext *);
+
+    std::unordered_map<int, std::vector<std::string>> mKeyDownNotifications;
+    std::unordered_map<int, std::vector<std::string>> mKeyUpNotifications;
 };
 
 
 
 }  // namespace CMPUT350
+
 
 #endif  // GAMEENGINE_H

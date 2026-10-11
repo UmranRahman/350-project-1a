@@ -14,6 +14,8 @@ namespace CMPUT350 {
 GameEngine::GameEngine(unsigned int width, unsigned int height, const std::string& name) {
     mWindow = std::make_shared<sf::RenderWindow>(sf::VideoMode({width, height}), name);
     mWindow->setFramerateLimit(30);
+    
+    mWindow->setKeyRepeatEnabled(false);
 
     mFont = std::make_shared<sf::Font>();
     
@@ -39,7 +41,8 @@ void GameEngine::AddGameObject(std::shared_ptr<GameObject> gameObject) {
 
 /**
  * @brief Handles window-close and key events; key presses are passed to every object. 
- * @param context Passed through to HandleKeyEvent.
+ * @param context.
+ * AI-ASSISTED: skeleton | AI did: gave the structure with blanks, pointed out the first/second bug and the wrong-map bug | I did: filled the rest
  * */
 void GameEngine::ProcessEvents(GameContext *context) {
     while (const std::optional event = mWindow->pollEvent())
@@ -47,15 +50,22 @@ void GameEngine::ProcessEvents(GameContext *context) {
         if (event->is<sf::Event::Closed>()) {
             mWindow->close();
         }
-        //else if (const auto* keyPressed = event->getIf<sf::Event::TextEntered>()) {
-            // use keyPressed->unicode to get character
-            // AI-assisted: Used to get template for keypressed events
-            /*if (keyPressed->unicode < 128) {
-                for (auto &odject : mGameObjects) {
-                    odject->HandleKeyEvent(context, static_cast<char>(keyPressed->unicode));
+        else if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>()) {
+            auto iter = mKeyDownNotifications.find(static_cast<int>(keyPressed->scancode));
+            if (iter != mKeyDownNotifications.end()) {
+                for (const auto &message : iter->second) {
+                    mNotificationManager.Notify(message);
                 }
-            }*/
-        //}
+            }
+        }
+        else if (const auto *keyReleased = event->getIf<sf::Event::KeyReleased>()) {
+            auto iter = mKeyUpNotifications.find(static_cast<int>(keyReleased->scancode));
+            if (iter != mKeyUpNotifications.end()) {
+                for (const auto &message : iter->second) {
+                    mNotificationManager.Notify(message);
+                }
+            }
+        }
     }
 }
 
@@ -79,6 +89,62 @@ void GameEngine::ProcessCollisions(GameContext *) {
     }
     }
 }
+
+
+/**
+ * @brief   Registers a notification name to be sent when the given key is pressed down.
+ * @param   key The key code (e.g. CMPUT350::Key::A).
+ * @param   notification The message sent to the NotificationManager on key-down. A key may have several.
+ * AI-ASSISTED: skeleton | AI did: gave the map type (int -> vector<string>) and the one-line pattern with blanks |
+ *              I did: filled the blanks and wrote the function
+ */
+void GameEngine::InstallKeyDownNotification(int key, const std::string &notification) {
+    mKeyDownNotifications[key].push_back(notification);
+}
+
+/**
+ * @brief   Registers a notification name to be sent when the given key is released.
+ * @param   key The key code.
+ * @param   notification The message sent to the NotificationManager on key-up.
+ * AI-ASSISTED: skeleton | AI did: gave the map type and the one-line pattern with blanks, then pointed out
+ *              that I used the key-down map by mistake | I did: filled the blanks and fixed the bug
+ */
+void GameEngine::InstallKeyUpNotification(int key, const std::string &notification) {
+    mKeyUpNotifications[key].push_back(notification);
+}
+
+/**
+ * @brief   Returns a const iterator to the first game object in the engine.
+ * @return  mGameObjects.cbegin(); callers can read the objects but not reorder or replace the pointers.
+ * AI-ASSISTED: provided | AI did: told me each iterator returns the matching call on mGameObjects |
+ *              I did: typed them and fixed the GameEngine:: / const qualifiers after feedback
+ */
+EngineView::const_iterator GameEngine::cbegin() const { return mGameObjects.cbegin(); }
+
+/**
+ * @brief   Returns a const iterator one past the last game object.
+ * @return  mGameObjects.cend().
+ * AI-ASSISTED: provided | AI did: told me each iterator returns the matching call on mGameObjects |
+ *              I did: typed them and fixed the GameEngine:: / const qualifiers after feedback
+ */
+EngineView::const_iterator GameEngine::cend() const { return mGameObjects.cend(); }
+
+/**
+ * @brief   Returns a const iterator to the first game object (enables range-for over the engine).
+ * @return  mGameObjects.begin(), a const_iterator because this function is const.
+ * AI-ASSISTED: provided | AI did: told me each iterator returns the matching call on mGameObjects |
+ *              I did: typed them and fixed the GameEngine:: / const qualifiers after feedback
+ */
+EngineView::const_iterator GameEngine::begin() const { return mGameObjects.begin(); }
+
+/**
+ * @brief   Returns a const iterator one past the last game object.
+ * @return  mGameObjects.end().
+ * AI-ASSISTED: provided | AI did: told me each iterator returns the matching call on mGameObjects |
+ *              I did: typed them and fixed the GameEngine:: / const qualifiers after feedback
+ */
+EngineView::const_iterator GameEngine::end() const { return mGameObjects.end(); }
+
 
 /**
  * @method Run
