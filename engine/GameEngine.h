@@ -3,7 +3,6 @@
 #define GAMEENGINE_H
 
 namespace CMPUT350 {
-class GameEngine;
 }
 
 #include "EngineView.h"
@@ -18,9 +17,9 @@ class GameEngine;
 #include <vector>
 #include <string>
 
-namespace CMPUT350 {
+#include "NotificationManager.h"
 
-class DrawContext;
+namespace CMPUT350 {
 
 class GameEngine : public EngineView {
 public:
@@ -40,6 +39,11 @@ private:
     std::shared_ptr<sf::RenderWindow> mWindow;
     std::shared_ptr<sf::Font> mFont;
     std::unique_ptr<DrawContext> mDrawContext;
+    
+    std::unique_ptr<DrawContext> mGUIDrawContext;
+    int mFrame = 0;
+    NotificationManager mNotificationManager;
+
     std::vector<std::shared_ptr<GameObject>> mGameObjects;
     std::vector<std::shared_ptr<GameObject>> mPendingObjects;
 

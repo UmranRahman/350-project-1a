@@ -97,6 +97,9 @@ public:
         context->ScreenContext->DrawLine(mLoc, mLoc + mCollisionPoint, mRadius * 0.1f, CMPUT350::Colors::blue);
     }
 
+    CMPUT350::Point2D GetLocation() const override { return CMPUT350::Point2D(0.0); }  // which Ball member holds the center?
+    float GetRotation() const override { return 0.0f; }
+
 private:
     static std::random_device rd;
     static std::mt19937 gen;
@@ -122,6 +125,7 @@ int main()
         engine.AddGameObject(std::make_shared<Ball>(50));
         engine.Run();
     }
+    /*
     else
     {
         CMPUT350::GameEngine engine(768, 1024, "Galaga");
@@ -134,6 +138,6 @@ int main()
             engine.AddGameObject(enemy);
         }
         engine.Run();
-    }
+    }*/
     return 0;
 }

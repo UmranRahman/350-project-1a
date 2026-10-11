@@ -19,9 +19,7 @@ void Player::LateUpdate(CMPUT350::GameContext* context)
 {
 }
 
-bool Player::HandleKeyEvent(CMPUT350::GameContext* context, char key)
-{
-}
+//bool Player::HandleKeyEvent(CMPUT350::GameContext* context, char key) {}
 
 void Player::RenderBackground(CMPUT350::GameContext* context)
 {

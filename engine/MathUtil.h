@@ -167,7 +167,7 @@ struct Line {
      *              first version (wrong vector in u, crossingPoint never set properly, exact comparison to zero) |
      *              I did: wrote it and fixed them
      */
-    bool Crosses(Line other, Point2D &crossingPoint) const {
+    bool Crosses(Line &other, Point2D &crossingPoint) const {
         // TODO: write this code
         Point2D P = p2 - p1;
         Point2D Q = other.p2 - other.p1;

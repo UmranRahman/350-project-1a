@@ -23,6 +23,8 @@ GameEngine::GameEngine(unsigned int width, unsigned int height, const std::strin
     }
 
     mDrawContext = std::make_unique<DrawContext>(mWindow, mFont);
+    mGUIDrawContext = std::make_unique<DrawContext>(mWindow, mFont);
+
 
 }
 
@@ -45,15 +47,15 @@ void GameEngine::ProcessEvents(GameContext *context) {
         if (event->is<sf::Event::Closed>()) {
             mWindow->close();
         }
-        else if (const auto* keyPressed = event->getIf<sf::Event::TextEntered>()) {
+        //else if (const auto* keyPressed = event->getIf<sf::Event::TextEntered>()) {
             // use keyPressed->unicode to get character
             // AI-assisted: Used to get template for keypressed events
-            if (keyPressed->unicode < 128) {
+            /*if (keyPressed->unicode < 128) {
                 for (auto &odject : mGameObjects) {
                     odject->HandleKeyEvent(context, static_cast<char>(keyPressed->unicode));
                 }
-            }
-        }
+            }*/
+        //}
     }
 }
 
@@ -84,10 +86,22 @@ void GameEngine::ProcessCollisions(GameContext *) {
  * @description Gives control to the game engine. Will not return until the game window is closed or
  * all objects have been destroyed.
  */
+
+// AI-ASSISTED: explained | AI did: listed which context fields to fill and which loops to touch, gave the skeleton for the context setup blanks | I did: wrote the Run() changes
 void GameEngine::Run() {
-    GameContext context{this, mDrawContext.get()};
+    //GameContext context{this, mDrawContext.get()};
+
+    GameContext context;
+    context.mEngineView = this;
+    context.ScreenContext = mDrawContext.get();
+    context.GUIContext = mGUIDrawContext.get();
+    context.mNotificationManager = &mNotificationManager;
+
     while (mWindow->isOpen())  // window is open
     {
+
+        context.currentFrame = mFrame;
+
         // 0. Remove any objects that are now dead
         // AI-assisted: erase-remove idiom explained by AI
         mGameObjects.erase(
@@ -104,6 +118,7 @@ void GameEngine::Run() {
         std::vector<std::shared_ptr<GameObject>> batch;
         batch.swap(mPendingObjects);
         for (auto &object : batch) {
+            context.CurrObject = object;
             mGameObjects.push_back(object);
             object->Initialize(&context);
         }
@@ -114,6 +129,7 @@ void GameEngine::Run() {
         
         // 3. Update game objects
         for (auto &object : mGameObjects) {
+            context.CurrObject = object;
             object->Update(&context);
         }
 
@@ -122,6 +138,7 @@ void GameEngine::Run() {
 
         // 5. Late updates
         for (auto &object : mGameObjects) {
+            context.CurrObject = object;
             object->LateUpdate(&context);
         }
 
@@ -131,6 +148,7 @@ void GameEngine::Run() {
         // 6. Render background
         // AI-assisted: dynamic_pointer_cast explained by AI
         for (auto &object : mGameObjects) {
+            context.CurrObject = object;
             auto graphic = std::dynamic_pointer_cast<GraphicsObject>(object);
             if (graphic) {
                 graphic->RenderBackground(&context);
@@ -139,14 +157,21 @@ void GameEngine::Run() {
 
         // 7. Render foreground
         for (auto &object : mGameObjects) {
+            context.CurrObject = object;
             auto graphic = std::dynamic_pointer_cast<GraphicsObject>(object);
             if (graphic) {
                 graphic->RenderForeground(&context);
             }
         }
 
+        for (auto &object : mGameObjects) {
+            context.CurrObject = object;
+            object->RenderUI(&context);
+        }
+
         // Actually render to window
         mWindow->display();
+        ++mFrame;
     }
 }
 
