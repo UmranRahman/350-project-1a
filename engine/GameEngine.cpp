@@ -217,6 +217,9 @@ void GameEngine::Run() {
             context.CurrObject = object;
             auto graphic = std::dynamic_pointer_cast<GraphicsObject>(object);
             if (graphic) {
+                //AI-ASSISTED: skeleton | AI did: said to set offset and rotation from the object before each render call, reset afterwards, and gave the blanks | I did: filled the blanks and wrote the loops
+                mDrawContext->SetContextOffset(graphic->GetLocation());
+                mDrawContext->SetContextRotation(graphic->GetRotation());
                 graphic->RenderBackground(&context);
             }
         }
@@ -226,6 +229,9 @@ void GameEngine::Run() {
             context.CurrObject = object;
             auto graphic = std::dynamic_pointer_cast<GraphicsObject>(object);
             if (graphic) {
+                //AI-ASSISTED: skeleton | AI did: said to set offset and rotation from the object before each render call, reset afterwards, and gave the blanks | I did: filled the blanks and wrote the loops
+                mDrawContext->SetContextOffset(graphic->GetLocation());
+                mDrawContext->SetContextRotation(graphic->GetRotation());
                 graphic->RenderForeground(&context);
             }
         }
