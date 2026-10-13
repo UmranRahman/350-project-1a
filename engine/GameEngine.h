@@ -20,6 +20,7 @@ namespace CMPUT350 {
 #include "Keyboard.h"
 
 #include "NotificationManager.h"
+#include "CollisionTests.h"
 
 namespace CMPUT350 {
 
@@ -45,7 +46,6 @@ public:
     const_iterator begin() const override;
     const_iterator end() const override;
 
-
     void Run();
 
 private:
@@ -62,6 +62,9 @@ private:
 
     void ProcessEvents(GameContext *context);
     void ProcessCollisions(GameContext *);
+
+    Rect WorldBounds(const std::shared_ptr<CollisionObject> &obj);
+    std::vector<Shape> WorldShapes(const std::shared_ptr<CollisionObject> &obj);
 
     std::unordered_map<int, std::vector<std::string>> mKeyDownNotifications;
     std::unordered_map<int, std::vector<std::string>> mKeyUpNotifications;

@@ -25,6 +25,10 @@ public:
     {
         // Update ball position or state
         mLoc += mSpeedNext;
+
+        mShapes.clear();
+        mShapes.push_back(CMPUT350::Circle(mLoc, mRadius));
+
         mSpeed = mSpeedNext;
         if (mLoc.x > 1024 - mRadius || mLoc.x < mRadius)
         {
@@ -100,12 +104,16 @@ public:
     CMPUT350::Point2D GetLocation() const override { return CMPUT350::Point2D(0.0); }  // which Ball member holds the center?
     float GetRotation() const override { return 0.0f; }
 
+    const std::vector<CMPUT350::Shape> &GetShapes() override { return mShapes; }
+
 private:
     static std::random_device rd;
     static std::mt19937 gen;
 
     int mRadius, mNumCollisions, mFrameCollisions;
     CMPUT350::Point2D mLoc, mSpeed, mSpeedNext, mCollisionPoint;
+
+    std::vector<CMPUT350::Shape> mShapes;
 };
 
 // Shared randoms across all balls

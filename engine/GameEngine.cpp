@@ -69,7 +69,74 @@ void GameEngine::ProcessEvents(GameContext *context) {
     }
 }
 
-// AI-assisted: pair loop and bounds-copy idea explained by AI
+/**
+ * @brief   Returns an object's bounding box in screen space.
+ * @param   obj The collision object. Its GetBounds() is in local space.
+ * @return  The axis-aligned box after applying the object's location and rotation.
+ *          Leaves that object's offset and rotation set on the screen DrawContext.
+ * AI-ASSISTED: skeleton | AI did: described the per-object transform and gave the skeleton with one blank, wrote this comment text | I did: filled the blank
+ */
+Rect GameEngine::WorldBounds(const std::shared_ptr<CollisionObject> &obj) {
+    mDrawContext->SetContextOffset(obj->GetLocation());
+    mDrawContext->SetContextRotation(obj->GetRotation());
+    return mDrawContext->Transform (obj->GetBounds());
+}
+
+/**
+ * @brief   Returns an object's collision shapes converted to screen space.
+ * @param   obj The collision object. Its GetShapes() are in local space.
+ * @return  Copies of the shapes after applying the object's location and rotation.
+ *          Circles keep their radius. Rects become the bounding box of the rotated rect (approximation).
+ *          Leaves that object's offset and rotation set on the screen DrawContext.
+ * AI-ASSISTED: skeleton | AI did: explained the per-shape conversion, gave the skeleton and the union-tag check, wrote this comment text | I did: filled the blanks
+ */
+std::vector<Shape> GameEngine::WorldShapes(const std::shared_ptr<CollisionObject> &obj) {
+    mDrawContext->SetContextOffset(obj->GetLocation());
+    mDrawContext->SetContextRotation(obj->GetRotation());
+
+    std::vector<Shape> result;
+    for (const Shape &s : obj->GetShapes()) {
+        if (s.t == ShapeType::kCircle) {
+            Circle c = s.shape.circle;
+            result.push_back(Circle(mDrawContext->Transform(c.center), c.radius));
+        } else if (s.t == ShapeType::kLine) {
+            Line l = s.shape.line;
+            result.push_back(Line(mDrawContext->Transform(l.p1), mDrawContext->Transform(l.p2)));
+        } else {
+            Rect r = s.shape.rect;
+            result.push_back(mDrawContext->Transform(r));
+        }
+    }
+    return result;
+}
+
+// lineOwner: 0 = no line involved, 1 = a is the line, 2 = b is the line
+static bool ShapesCollide(const Shape &a, const Shape &b, Point2D &hit, int &lineOwner) {
+    lineOwner = 0;
+    if (a.t == ShapeType::kLine) {
+        lineOwner = 1;
+        if (b.t == ShapeType::kCircle) return LineCircle(a.shape.line, b.shape.circle, hit);
+        if (b.t == ShapeType::kRect)   return LineRect(a.shape.line, b.shape.rect, hit);
+        return a.shape.line.Crosses(b.shape.line, hit);
+    }
+    if (b.t == ShapeType::kLine) {
+        lineOwner = 2;
+        if (a.t == ShapeType::kCircle) return LineCircle(b.shape.line, a.shape.circle, hit);
+        return LineRect(b.shape.line, a.shape.rect, hit);
+    }
+    if (a.t == ShapeType::kCircle && b.t == ShapeType::kCircle) return CircleCircle(a.shape.circle, b.shape.circle);
+    if (a.t == ShapeType::kCircle) return CircleRect(a.shape.circle, b.shape.rect);
+    if (b.t == ShapeType::kCircle) return CircleRect(b.shape.circle, a.shape.rect);
+    return RectRect(a.shape.rect, b.shape.rect);
+}
+
+/**
+ * @brief   Finds colliding pairs of collision objects and notifies them.
+ * @param   Unused game context.
+ * Each pair is compared once (j > i). The broad phase compares screen-space bounding boxes with Overlaps().
+ * Shape-level tests are added in the narrow phase.
+ * AI-ASSISTED: provided | AI did: gave the pair loop with j = i + 1 and the copied-bounds idea (1a) | I did: typed and adapted it, added the WorldBounds call
+ */
 void GameEngine::ProcessCollisions(GameContext *) {
     std::vector<std::shared_ptr<CollisionObject>> collided;
     for (auto &object: mGameObjects){
@@ -80,16 +147,43 @@ void GameEngine::ProcessCollisions(GameContext *) {
     }
     for (size_t i = 0; i < collided.size(); ++i) {
         for (size_t j = i+1; j < collided.size(); ++j) {
-        Rect a = collided[i]->GetBounds();                // COPIES, not references (demo reuses one static Rect)
-        Rect b = collided[j]->GetBounds();
+            Rect a = WorldBounds(collided[i]);
+            Rect b = WorldBounds(collided[j]);
         if (Overlaps(a, b)) {
-            collided[i]->CollisionEnter(collided[j]);
-            collided[j]->CollisionEnter(collided[i]);
+            std::vector<Shape> shapesA = WorldShapes(collided[i]);
+            std::vector<Shape> shapesB = WorldShapes(collided[j]);
+
+            bool found = false;
+            Point2D hit;
+            int lineOwner = 0; //if 1 belongs to collided[i], if 2 then collided[j]
+            for (size_t p = 0; p < shapesA.size() && !found; ++p) {
+                for (size_t q = 0; q < shapesB.size() && !found; ++q) {
+                    found = ShapesCollide(shapesA[p], shapesB[q], hit, lineOwner);
+                }
+            }
+            if (found) {
+                if (lineOwner == 0) {
+                    collided[i]->CollisionEnter(collided[j]);
+                    collided[j]->CollisionEnter(collided[i]);
+                }
+                else {
+                    //AI-ASSISTED: skeleton | AI did: explained the lineOwner logic and gave the else skeleton | I did: filled the blanks
+                    auto &owner = (lineOwner == 1) ? collided[i] : collided[j];
+                    auto &other = (lineOwner == 1) ? collided[j] : collided[i];
+                    mDrawContext->SetContextOffset(owner->GetLocation());
+                    mDrawContext->SetContextRotation(owner->GetRotation());
+                    Point2D localHit = mDrawContext->ReverseTransform(hit);
+                    owner->CollisionEnter(other, localHit);
+                    other->CollisionEnter(owner);
+                }
+            }
+
+            }
         }
     }
-    }
+    mDrawContext->SetContextOffset(Point2D(0, 0));
+    mDrawContext->SetContextRotation(0.0f);
 }
-
 
 /**
  * @brief   Registers a notification name to be sent when the given key is pressed down.
@@ -151,9 +245,8 @@ EngineView::const_iterator GameEngine::end() const { return mGameObjects.end(); 
  * @arguments None
  * @description Gives control to the game engine. Will not return until the game window is closed or
  * all objects have been destroyed.
+ * AI-ASSISTED: explained | AI did: listed which context fields to fill and which loops to touch, gave the skeleton for the context setup blanks | I did: wrote the Run() changes
  */
-
-// AI-ASSISTED: explained | AI did: listed which context fields to fill and which loops to touch, gave the skeleton for the context setup blanks | I did: wrote the Run() changes
 void GameEngine::Run() {
     //GameContext context{this, mDrawContext.get()};
 
@@ -235,6 +328,9 @@ void GameEngine::Run() {
                 graphic->RenderForeground(&context);
             }
         }
+
+        mDrawContext->SetContextOffset(Point2D(0, 0));
+        mDrawContext->SetContextRotation(0.0f);
 
         for (auto &object : mGameObjects) {
             context.CurrObject = object;
