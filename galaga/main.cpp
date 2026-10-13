@@ -4,6 +4,19 @@
 #include "Enemy.h"
 #include "Stars.h"
 
+
+int main()
+{
+    CMPUT350::GameEngine engine(768, 1024, "Test");
+    engine.InstallKeyDownNotification(CMPUT350::Key::A, "MoveLeft");
+    engine.InstallKeyUpNotification(CMPUT350::Key::A, "StopLeft");
+    engine.InstallKeyDownNotification(CMPUT350::Key::D, "MoveRight");
+    engine.InstallKeyUpNotification(CMPUT350::Key::D, "StopRight");
+    engine.InstallKeyDownNotification(CMPUT350::Key::Space, "Fire");
+    engine.AddGameObject(std::make_shared<Player>(CMPUT350::Point2D(384, 900)));
+    engine.Run();
+}
+/*
 class Ball : public CMPUT350::CollisionObject
 {
 public:
@@ -147,5 +160,5 @@ int main()
         }
         engine.Run();
     }*/
-    return 0;
-}
+    //return 0;
+//}
