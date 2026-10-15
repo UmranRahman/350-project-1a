@@ -4,7 +4,10 @@
 
 ## AI usage disclosure
 
-Tool: Claude (claude.ai). Full chat log: <https://claude.ai/share/cda2dce6-4845-4a01-9a25-fa49c1a8e462>.
+Tool: Claude (claude.ai). Full chat logs: 
+1. <https://claude.ai/share/cda2dce6-4845-4a01-9a25-fa49c1a8e462>
+2. <https://claude.ai/share/3e0ba032-cf12-4edb-8c36-a563bc2e4df5>
+3. <https://claude.ai/share/bd875010-d741-47dd-b3f7-f20d45f5fb70>
 I worked alone, so I am responsible for understanding all code below.
 AI-assisted code is also marked with "AI-assisted" comments in the source.
 
@@ -89,3 +92,6 @@ Course-provided (ball demo and Galaga branch). The `mBallSsample` flag selects t
 - **What AI got wrong or caused:** It gave full code several times after I asked for guidance only, and it first suggested a constructor-order for `DrawContext` that I had to adjust. The inner-loop bug in `ProcessCollisions` was mine, and AI caught it.
 - **Bugs I fixed myself:** local window instead of the member, `erase` called with one argument (undefined behavior), duplicated `LateUpdate`, and the loop-start bug above.
 - **What I learned:** shared ownership vs. a single owner, why objects are added through a pending list, and why bounds must be copied.
+
+### Project 1b
+The AI usage is mentioned in the documentation in the code.

@@ -25,7 +25,7 @@ public:
 
     // Graphics Object Functions
     //void RenderBackground(CMPUT350::GameContext* context) override;
-    void RenderForeground(CMPUT350::GameContext* context) override;
+    //void RenderForeground(CMPUT350::GameContext* context) override;
 
 
     // Collision Object Functions
