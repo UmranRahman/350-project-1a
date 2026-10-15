@@ -7,12 +7,21 @@
 #include "EngineView.h"
 
 
-
+/**
+ * @brief   Creates the player at a world position. Its box is stored in local space, centred on (0,0).
+ * @param   loc Starting world position (the engine adds this to every local shape).
+ * AI-ASSISTED: skeleton | AI did: gave the constructor structure with blanks, explained local vs world coordinates, pointed out the double-offset and pop_back bugs; wrote this comment | I did: filled the blanks and wrote the code
+ */
 Player::Player(CMPUT350::Point2D loc) : mLoc(loc), mBounds(CMPUT350::Rect(-20, -20, 40, 40))
 {
     mShapes.push_back(mBounds);
 }
 
+/**
+ * @brief   Registers for the movement and fire notifications and keeps a weak pointer to itself.
+ * @param   context Engine context; CurrObject is this player's weak pointer.
+ * AI-ASSISTED: skeleton | AI did: gave the registration blanks, then corrected the receiver and argument order; wrote this comment | I did: wrote the registrations
+ */
 void Player::Initialize(CMPUT350::GameContext* context)
 {
     context->mNotificationManager->Register(context->CurrObject, "MoveLeft");
@@ -24,6 +33,10 @@ void Player::Initialize(CMPUT350::GameContext* context)
     mSelf = context->CurrObject;
 }
 
+/**
+ * @brief   World position of the player, which is the rotation centre.
+ * AI-ASSISTED: skeleton | AI did: gave the structure with blanks; wrote this comment | I did: filled the blanks
+ */
 void Player::Update(CMPUT350::GameContext* context)
 {
     mLoc.x += mMoveDir*7;
@@ -49,6 +62,7 @@ void Player::LateUpdate(CMPUT350::GameContext* context)
 
 //bool Player::HandleKeyEvent(CMPUT350::GameContext* context, char key) {}
 
+
 void Player::RenderBackground(CMPUT350::GameContext* context)
 {
 }
@@ -72,6 +86,10 @@ bool Player::IsAlive() const
     return true;
 }
 
+/**
+ * @brief   Bounding box in local space.
+ * AI-ASSISTED: explained | AI did: said to return a member instead of the dummy; wrote this comment | I did: wrote it
+ */
 const CMPUT350::Rect& Player::GetBounds()
 {
     return mBounds;
@@ -79,7 +97,17 @@ const CMPUT350::Rect& Player::GetBounds()
 
 
 CMPUT350::Point2D Player::GetLocation() const { return mLoc; }
+
+/**
+ * @brief   Rotation in radians; always 0 for the player.
+ * AI-ASSISTED: skeleton | AI did: gave the structure; wrote this comment | I did: wrote it
+ */
 float Player::GetRotation() const { return 0.0f; }
+
+/**
+ * @brief   Collision shapes in local space (one 40x40 rect).
+ * AI-ASSISTED: skeleton | AI did: gave the structure with blanks; wrote this comment | I did: filled the blanks
+ */
 const std::vector<CMPUT350::Shape> &Player::GetShapes() { return mShapes; }
 
 void Player::ReceiveNotification(const std::string &key) {
