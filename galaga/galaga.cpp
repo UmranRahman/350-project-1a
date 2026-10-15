@@ -1,7 +1,9 @@
 #include "Galaga.h"
 
 #include "Player.h"
-#include "Enemy.h"
+#include "Enemy1.h"
+#include "Enemy2.h"
+#include "Enemy3.h"
 #include "Stars.h"
 
 #include "EngineView.h"
@@ -9,6 +11,7 @@
 #include "Keyboard.h"
 
 #include <string>
+#include <vector>
 
 /**
  * @brief Creates the game manager in the waiting state and stores the screen size.
@@ -70,8 +73,27 @@ void Galaga::Update(CMPUT350::GameContext* context)
         if (elapsed == 0)
             context->mEngineView->AddGameObject(
                 std::make_shared<Player>(CMPUT350::Point2D(mWidth / 2.0f, mHeight - 60.0f)));
-        if (elapsed >= 90)
+        if (elapsed >= 90) {
+            mWave = 0;
             ChangeState(State::kWaves);
+        }
+    }
+    if (mState == State::kWaves) {
+        if (mWave < 5 && elapsed == mWave * 90) {
+            SpawnWave(context);
+            ++mWave;
+        }
+        if (mWave >= 5 && elapsed >= 90*6) {
+            ChangeState(State::kGamePlay);
+        }
+    }
+    if (mState == State::kGamePlay)
+    {
+        if (mEnemiesAlive <= 0)
+        {
+            ++mLevel;
+            ChangeState(State::kStartup);
+        }
     }
 }
 
@@ -111,6 +133,16 @@ void Galaga::ReceiveNotification(const std::string& key)
             ChangeState(State::kStartup);
         }
     }
+    else if (key.find("Died") != std::string::npos)
+    {
+        --mEnemiesAlive;
+        int points = 50;
+        if (key.rfind("Enemy2", 0) == 0) points = 100;
+        if (key.rfind("Enemy3", 0) == 0) points = 75;
+        if (key.find("Attack") != std::string::npos)
+            points *= 2;
+        mScore += points;
+    }
 }
 
 /**
@@ -121,4 +153,30 @@ void Galaga::ReceiveNotification(const std::string& key)
 void Galaga::ChangeState(State s){
     mState = s;
     mStateStartFrame = -1;
+}
+
+/**
+ * @brief Spawns one batch of 8 enemies with entry Bezier paths; the enemy type depends on the batch number.
+ * @param context Engine context (engine view).
+ * AI-ASSISTED: skeleton | AI did: gave the loop and curve with blanks | I did: filled the blanks
+ */
+void Galaga::SpawnWave(CMPUT350::GameContext *context)
+{
+    for (int i = 0; i < 8; ++i)
+    {
+        float x = 64.0f + i * 80;
+        float y = 100.0f + mWave * 50;
+        CMPUT350::Point2D home(x, y);
+        std::vector<CMPUT350::Point2D> path = {
+            CMPUT350::Point2D(x, -30), CMPUT350::Point2D(x, 300),
+            CMPUT350::Point2D(mWidth / 2.0f, 400), home };
+
+        if (mWave % 3 == 0)
+            context->mEngineView->AddGameObject(std::make_shared<Enemy1>(home, path));
+        else if (mWave % 3 == 1)
+            context->mEngineView->AddGameObject(std::make_shared<Enemy2>(home, path));
+        else
+            context->mEngineView->AddGameObject(std::make_shared<Enemy3>(home, path));
+        ++mEnemiesAlive;
+    }
 }
