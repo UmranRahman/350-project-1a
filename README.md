@@ -95,4 +95,26 @@ Course-provided (ball demo and Galaga branch). The `mBallSsample` flag selects t
 - **What I learned:** shared ownership vs. a single owner, why objects are added through a pending list, and why bounds must be copied.
 
 ### Project 1b
-The AI usage is mentioned in the documentation in the code.
+
+## Reflection
+
+**What worked:** The skeletons with blanks were the most useful part. I had to read the
+surrounding code and work out the right response for each blank, so I wrote the logic myself
+instead of copying it. Counting frames with a shared clock (mStateStartFrame and elapsed) also
+made states possible, and together with fixing the missing return after ChangeState it let me
+finally see the game-over screen.
+
+**What the AI got wrong:** The bug that annoyed me most was "PlayerDied" being caught by the
+generic "Died" branch, because it also contains the word "Died". Lives never dropped until I
+moved the PlayerDied branch above it. Other skeletons needed testing too (no return after
+ChangeState, unreliable respawn timing).
+
+**What I got wrong:** My biggest mistake was creating a second GameEngine inside the Galaga
+constructor. That made a second window instead of using the engine's view through the context,
+and it taught me that objects get engine access from GameContext, not by making their own.
+
+**What I still don't fully understand:** The `rfind(..., 0)` trick for "starts with" and the
+math in Follow (step = 6 / slope length for constant speed). I can use them, but I'd need to
+re-read them to explain them.
+
+**Known gaps:** listed in project.txt, section 4.

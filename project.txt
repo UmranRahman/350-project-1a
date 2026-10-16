@@ -1,0 +1,88 @@
+CMPUT 350 - Project 1b: Galaga on a custom C++ engine
+=======================================================
+
+BUILD / RUN
+-----------
+C++20, SFML 3.1, CMake.  cmake -B build && cmake --build build && ./build/Project1
+Engine code is in engine/ (namespace CMPUT350). Game code is in galaga/ (global namespace).
+main.cpp only creates the engine, adds one Galaga object and calls Run().
+
+1. WHAT WAS IMPLEMENTED
+-----------------------
+Engine: Point2D/Rect/Line/Circle math, NotificationManager (weak_ptr listeners),
+GameContext, GameObject, GraphicsObject, CollisionObject (shape union),
+Bezier (multi-segment cubic), DrawContext (per-object offset/rotation, Transform and
+ReverseTransform, separate GUI and screen contexts), GameEngine (object iterators,
+key-down/key-up notifications, broad + narrow phase collisions with a collision point for
+lines, each pair compared once).
+Game: Player, Bullet, Enemy (base class) with Enemy1/Enemy2/Enemy3, Stars, Galaga (game manager).
+
+2. DESIGN DECISIONS AND API CHANGES
+-----------------------------------
+- Collisions: broad phase compares screen-space bounding boxes (j > i so each pair once).
+  Narrow phase compares the individual shapes. If a line is involved, the first hit point is
+  converted back to the line owner's local space with ReverseTransform before CollisionEnter.
+- Keys: the engine maps key codes to notification strings. Galaga installs the keys
+  (A/Left -> MoveLeft, D/Right -> MoveRight, key-up -> StopLeft/StopRight, Space -> Fire,
+  5 -> Coin, 1 -> Start). Objects register for the notifications; no HandleKeyEvent.
+- Objects that need to notify use a two-step pattern: CollisionEnter only records the hit,
+  and LateUpdate (which has a GameContext) sends the notification.
+- Changes to provided/spec files:
+  * Keyboard.h: added an include guard (#ifndef KEYBOARD_H).
+  * CollisionObject.h: added  virtual bool IsStatic() const { return false; }  because the
+    provided collision demo main overrides it.
+- Enemy: base class owns the state machine (kEntering -> kInFormation -> kAttacking ->
+  kInFormation), constant-speed Bezier following (step = 6 px / slope length), hover in formation
+  using context->currentFrame (sin wave), shooting while attacking, health and death notification.
+  Subclasses supply Name(), Attack() (their own Bezier dive) and RenderForeground().
+    Enemy1: 1 health, cyan square, dives right.
+    Enemy2: 2 health, magenta square that turns blue when damaged, dives left.
+    Enemy3: green circle, wide swinging dive.  (TODO: confirm health value in code: ____)
+- Enemy death messages are "<Name>DiedFormation" or "<Name>DiedAttack". Points: Enemy1 50,
+  Enemy2 100, Enemy3 75; doubled when the enemy was attacking.
+- Enemy bullets are tied to their shooter with a weak_ptr parent; a bullet dies when its parent
+  is gone. A bullet's shape is a line from its previous to current position, so it ends exactly
+  on what it hits (drawn as a circle at the collision point for 3 frames).
+
+3. GALAGA STATE FLOW
+--------------------
+Galaga is a finite state machine. Time in a state is currentFrame - mStateStartFrame; ChangeState
+sets mStateStartFrame to -1 and Update records the frame on the next call. Update returns right
+after ChangeState so the next state starts fresh next frame.
+
+ kWaiting  : shows INSERT COIN and credits. Key 5 adds a credit; key 1 spends one and starts.
+ kStartup  : shows LEVEL n for 90 frames. Creates the player if one does not exist.
+ kWaves    : spawns 5 batches of 8 enemies, one batch every 90 frames. Enemy type depends on the
+             batch number. After the last batch, waits 90*6 frames for them to fly in.
+ kGamePlay : every 90 frames asks enemies (via the engine iterator, first willing enemy in
+             list order, so deterministic) to Attack toward the player. When mEnemiesAlive
+             reaches 0 the level number goes up and we return to kStartup. If the player is dead:
+             if no lives remain -> kGameOver, otherwise respawn after 60 frames.
+ kGameOver : shows GAME OVER for 150 frames, removes leftover enemies, resets score/lives/level,
+             returns to kWaiting.
+Score and lives are drawn in RenderUI. Enemy count and score are updated from enemy death
+notifications; lives from "PlayerDied".
+
+4. KNOWN LIMITATIONS (honest list)
+----------------------------------
+- Respawn uses a fixed 2 second delay rather than waiting for all ships to return home.
+- Game over is only checked in kGamePlay (a player who dies during waves respawns/ends once
+  gameplay begins).
+- Enemy bullets may still be able to hit other enemies (TODO: remove this line if fixed).
+- Some functions are missing doc blocks and some compiler warnings may remain
+  (TODO: update after your final grep/build).
+- DrawCenteredText is not truly centered. No extra credit attempted.
+
+5. AI USE
+---------
+See README.md for the chat links, prompts, per-function record and reflection.
+Summary: AI was used as a TA-style helper (explanations, skeletons with blanks, bug review).
+1a: ProcessEvents and ProcessCollisions were largely AI-provided; DrawContext was written by
+me from the SFML headers with AI examples. 1b: most code was written by me from skeletons with
+blanks. AI wrote all of the doc comment text and the throwaway test programs (test_collide.cpp,
+deleted; test_bezier.cpp; a key test). Every function's own comment has an AI-ASSISTED line.
+
+6. TEAM CONTRIBUTIONS
+---------------------
+I worked alone (same as Part 1a), so all of the code, testing and documentation was done by me,
+with AI help as described in README.md.
