@@ -96,7 +96,70 @@ Course-provided (ball demo and Galaga branch). The `mBallSsample` flag selects t
 
 ### Project 1b
 
-## Reflection
+## Project 1b: AI usage, Chat 1 (engine, Player, Bullet, start of Enemy)
+
+Tool: Claude (claude.ai). Chat link: TODO (add the share link for this chat)
+The AI acted as a TA: explanations, skeletons with blanks, and code review. Labels:
+explained = AI explained, I wrote it. skeleton = AI gave structure with blanks, I filled them.
+provided = AI gave the code, I typed it. Every function also has an `AI-ASSISTED:` comment in
+the source (`grep -rn "AI-ASSISTED" engine galaga`).
+
+| Item | Origin | What AI did | What I did |
+|---|---|---|---|
+| NotificationManager (`Register`, `Unregister`, `Notify`) | skeleton, partly provided | Explained weak_ptr listeners and copy-before-iterate; gave skeletons; gave the answers for the `Unregister` lambda (`!p \|\| p == target`) and the `Notify` cleanup (`mListeners[message]`, `expired`) | Wrote `Register` and the `Notify` loop; typed the rest |
+| GameObject / GraphicsObject / GameContext | explained | Explained forward declarations, defaults, includes | Wrote them from the handout |
+| `Line::Crosses` `const Line &` fix | explained | Pointed it out | Changed it |
+| GameEngine `Run()` changes (context fields, `CurrObject`, `currentFrame`, `RenderUI`, per-object offset/rotation) | skeleton | Listed the fields and loops; gave blanks for the context setup | Wrote the changes |
+| Engine iterators (`cbegin`, `cend`, `begin`, `end`) | provided | Gave the one-line bodies | Typed them; fixed qualifiers |
+| Key notification maps, `InstallKey...`, `ProcessEvents` KeyPressed/KeyReleased | skeleton (map types provided) | Gave map types and the pattern with blanks | Filled blanks; set key repeat off |
+| `WorldBounds`, `WorldShapes`, `ShapesCollide` | skeleton | Gave skeletons with blanks | Filled the blanks |
+| `ProcessCollisions` narrow phase | skeleton | Gave the structure in small pieces and the line-owner `else` skeleton | Filled blanks; wrote the loop |
+| `CollisionTests.h`: `CircleCircle`, `CircleRect`, `RectRect`, `LineRect` | skeleton | Explained the ideas; gave skeletons | Filled the blanks |
+| `CollisionTests.h`: `LineCircle` | skeleton, nearly provided | Derived the quadratic; gave the formulas and almost the whole body | Filled the blanks; fixed the `Dot` calls |
+| Bezier `GetPoint`/`GetSlope` | skeleton / explained | Gave formulas; gave `GetPoint` skeleton | Wrote the code |
+| Bezier `FindSegment` | skeleton | Gave structure and hints that were nearly the answers | Filled the blanks |
+| Bezier constructor and instance functions | skeleton / explained | Explained initializer lists; said to delegate to the static versions | Wrote them |
+| DrawContext `Transform`, setters | explained | Pointed to Lecture 7 and the rotate-then-shift order | Wrote them |
+| DrawContext `ReverseTransform`, `Transform(Rect)` | skeleton | Gave structure with blanks | Filled the blanks |
+| DrawContext draw functions (transform points before drawing) | skeleton | Said to transform points; gave blanks and the `ConvexShape` skeleton | Filled the blanks; wrote the rest |
+| Stars `GetLocation`/`GetRotation` | provided | Gave the return values and where they go | Typed them |
+| Player (shapes, movement flags, firing, render, notifications) | skeleton / explained | Explained local vs world coordinates and the key-down/key-up flag design; gave skeletons (including `expired`) | Wrote most of it |
+| Bullet constructor and `UpdateShape` | provided | Gave the lines | Typed them |
+| Bullet `Update`, `RenderForeground`, `CollisionEnter`, `IsAlive`, `Kill` | explained | Described the design; corrected my first versions | Wrote them |
+| Enemy.h, constructor, getters, `IsAlive`, `Kill` | explained / skeleton | Listed members; gave the constructor with a blank | Wrote them |
+| `Enemy::Follow` | skeleton | Explained constant speed (step = speed / slope length); gave blanks | Filled the blanks |
+| All doc comment text (`@brief`, `@param`) | provided | Wrote all of it | Pasted and checked it |
+| `test_collide.cpp`, `test_bezier.cpp`, key-test `main` | provided | Wrote them entirely | Ran them; `test_collide.cpp` was deleted |
+
+### Bugs in the AI's suggestions
+- Gave the expected Bezier slope at t=0.5 as (7.5, 0). The correct value is (15, 0); my code was right.
+- Said the stub `GetLocation`/`GetRotation` bodies in `GraphicsObject.cpp` would let `Ball` compile. That was wrong: a `= 0` declaration keeps the class abstract.
+- Called something a "bug" in `Bullet::Update`'s off-screen check that was not a bug; the real issue was the immediate-kill on hit.
+- Gave blanks so close to the answer (`FindSegment`, `LineCircle`) that they were effectively provided code.
+- Padded one reply with unrelated side notes after I asked only for docs.
+
+### Bugs I made (found in this chat)
+- NotificationManager: unfilled blanks, `vec`/`vector` mismatch, `ReceiveNotification` called on the manager instead of the object.
+- `InstallKeyUpNotification` used the key-down map; the key-up branch searched the wrong map; `iter->first` instead of `iter->second` (twice); an `#ifdef KEYBOARD_H` hack that skipped the whole class.
+- Bezier: missing factors of 3, last slope coefficient 6 instead of 3, global `t` instead of `localT`.
+- DrawContext: `ReverseTransform` in the wrong order; `Transform(Rect)` with swapped x/y and `box(b, b)` misuse; duplicate `DrawRect`; wrong outline thickness; duplicate `position` in `DrawCircle`; `DrawLine` corners still using `from`/`to`.
+- Called `DrawContext::Transform` as if static in `ProcessCollisions`.
+- Used `Transform(hit)` instead of `ReverseTransform(hit)` in the line-hit branch. TODO: confirm it is fixed.
+- Player: `pop_back` instead of `push_back`; shapes in world coordinates; `Colors` typo; swapped `CurrObject` and manager; clamp bound 768 instead of 748.
+- Bullet: `null` instead of `nullptr`; killed the bullet immediately on hit.
+- Ran an old binary and read stale output as a result (more than once).
+
+### Reflection (Chat 1)
+Skeletons with blanks worked best: I saw the structure, filled in the details, and could explain them.
+Testing small pieces separately (notification test, Bezier values, collision shape tests) caught bugs
+early. The AI gave one wrong expected value and some blanks that were nearly the answer. My mistakes
+were mostly copying a pattern without adapting it (wrong map, wrong member, wrong coordinate space)
+and running stale builds. TODO: add in your own words what you learned about local vs world space.
+
+Doc comment text for the engine, Player, and Bullet was written by AI and checked by me. The
+throwaway tests were written by AI and are not part of the submission.
+
+## Reflection (Chat 2)
 
 **What worked:** The skeletons with blanks were the most useful part. I had to read the
 surrounding code and work out the right response for each blank, so I wrote the logic myself
