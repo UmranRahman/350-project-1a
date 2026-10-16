@@ -44,6 +44,8 @@ private:
     std::weak_ptr<CMPUT350::GameObject> mSelf;
     std::weak_ptr<Bullet> mBullets[2];
     bool mWantsToFire = false;
+    bool mHit = false;
+    bool mAlive = true;
 
 
 };

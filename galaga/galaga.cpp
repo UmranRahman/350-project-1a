@@ -1,6 +1,6 @@
 #include "Galaga.h"
 
-#include "Player.h"
+#include "Enemy.h"
 #include "Enemy1.h"
 #include "Enemy2.h"
 #include "Enemy3.h"
@@ -25,9 +25,9 @@ Galaga::Galaga(int width, int height) : mWidth(width), mHeight(height)
 }
 
 /**
- * @brief Installs the keyboard notifications and registers Galaga for the coin and start messages.
- * @param context Engine context (engine view for keys, notification manager, CurrObject).
- * AI-ASSISTED: explained | AI did: pointed out the engine view and the missing registrations | I did: wrote the key installs
+ * @brief Installs the key notifications and registers Galaga for coin, start, player-died and enemy-died messages.
+ * @param context Engine context (engine view, notification manager, CurrObject).
+ * AI-ASSISTED: provided | AI did: gave the arrow-key installs, mSelf and the Register calls | I did: wrote the WASD/space/coin/start installs
  */
 void Galaga::Initialize(CMPUT350::GameContext* context)
 {
@@ -51,16 +51,20 @@ void Galaga::Initialize(CMPUT350::GameContext* context)
     context->mEngineView->InstallKeyDownNotification(CMPUT350::Key::Num5, "Coin");
     context->mEngineView->InstallKeyDownNotification(CMPUT350::Key::Num1, "Start");
 
+    context->mNotificationManager->Register(context->CurrObject, "PlayerDied");
+
     for (std::string name : {"Enemy1", "Enemy2", "Enemy3"}) {
         context->mNotificationManager->Register(context->CurrObject, name + "DiedFormation");
         context->mNotificationManager->Register(context->CurrObject, name + "DiedAttack");
     }
+
+    context->mEngineView->AddGameObject(std::make_shared<Stars>(151, CMPUT350::Rect(0.0f, 0.0f, static_cast<float>(mWidth), static_cast<float>(mHeight))));
 }
 
 /**
- * @brief Runs the game state machine; so far only Startup: adds the player, then moves on after 90 frames.
+ * @brief Runs the game state machine: startup adds the player, waves spawn 5 batches of 8, gameplay launches an attacker every 90 frames and ends the level when no enemies are left.
  * @param context Engine context (current frame, engine view).
- * AI-ASSISTED: skeleton | AI did: gave the frame-counting idea and the structure with blanks | I did: filled the blanks
+ * AI-ASSISTED: skeleton | AI did: gave the frame-counting idea, state structure and attacker loop with blanks; pointed out missing returns after ChangeState, the respawn placement and the death-frame timing | I did: filled the blanks and fixed the missing braces
  */
 void Galaga::Update(CMPUT350::GameContext* context)
 {
@@ -70,12 +74,17 @@ void Galaga::Update(CMPUT350::GameContext* context)
 
     if (mState == State::kStartup)
     {
-        if (elapsed == 0)
-            context->mEngineView->AddGameObject(
-                std::make_shared<Player>(CMPUT350::Point2D(mWidth / 2.0f, mHeight - 60.0f)));
+        if (elapsed == 0 && mPlayer.expired()) {
+            auto p = std::make_shared<Player>(CMPUT350::Point2D(mWidth / 2.0f, mHeight - 60.0f));
+            mPlayer = p;
+            context->mEngineView->AddGameObject(p);
+        }
+        //if (elapsed == 0)
+            //context->mEngineView->AddGameObject(std::make_shared<Player>(CMPUT350::Point2D(mWidth / 2.0f, mHeight - 60.0f)));
         if (elapsed >= 90) {
             mWave = 0;
             ChangeState(State::kWaves);
+            return;
         }
     }
     if (mState == State::kWaves) {
@@ -85,6 +94,8 @@ void Galaga::Update(CMPUT350::GameContext* context)
         }
         if (mWave >= 5 && elapsed >= 90*6) {
             ChangeState(State::kGamePlay);
+            return;
+
         }
     }
     if (mState == State::kGamePlay)
@@ -93,12 +104,61 @@ void Galaga::Update(CMPUT350::GameContext* context)
         {
             ++mLevel;
             ChangeState(State::kStartup);
+            return;
+
+        }
+        if (elapsed > 0 && elapsed % 90 == 0) {
+            auto player = mPlayer.lock();
+            if (player != nullptr)
+            {
+                for (auto it = context->mEngineView->begin(); it != context->mEngineView->end(); ++it)
+                {
+                    auto enemy = std::dynamic_pointer_cast<Enemy>(*it);
+                    if (enemy != nullptr && enemy->Attack(context, player->GetLocation()))
+                        break;
+                }
+            }
+        }
+        if ((mState == State::kWaves || mState == State::kGamePlay) && mPlayer.expired())
+        {
+            if (mLives <= 0)
+            {
+                ChangeState(State::kGameOver);
+                return;
+            }
+            if (mDeathFrame < 0)
+                mDeathFrame = context->currentFrame;
+            if (context->currentFrame - mDeathFrame >= 60)
+            {
+                auto p = std::make_shared<Player>(CMPUT350::Point2D(mWidth / 2.0f, mHeight - 60.0f));
+                mPlayer = p;
+                context->mEngineView->AddGameObject(p);
+                mDeathFrame = -1;
+            }
+        }
+    }
+    if (mState == State::kGameOver)
+    {
+        if (elapsed == 0)
+        {
+            for (auto it = context->mEngineView->begin(); it != context->mEngineView->end(); ++it)
+            {
+                if (std::dynamic_pointer_cast<Enemy>(*it) != nullptr)
+                    (*it)->Kill();
+            }
+            mEnemiesAlive = 0;
+        }
+        if (elapsed >= 150)
+        {
+            mScore = 0; mLives = 3; mLevel = 1;
+            ChangeState(State::kWaiting);
+            return;
         }
     }
 }
 
 /**
- * @brief Draws the GUI: the insert-coin prompt and credit count while waiting.
+ * @brief Draws the GUI: insert-coin prompt and credits, the level number, the score and the lives.
  * @param context Engine context (GUI draw context).
  * AI-ASSISTED: skeleton | AI did: gave the draw calls with blanks | I did: filled the blanks
  */
@@ -115,12 +175,21 @@ void Galaga::RenderUI(CMPUT350::GameContext* context)
     if (mState != State::kWaiting) {
         context->GUIContext->DrawText("SCORE " + std::to_string(mScore), 24, CMPUT350::Point2D(20, 20), CMPUT350::Colors::white);
     }
+    if (mState != State::kWaiting) {
+        context->GUIContext->DrawText("LIVES " + std::to_string(mLives), 24, CMPUT350::Point2D(20, 50), CMPUT350::Colors::white);
+    }
+    if ((mState == State::kWaves || mState == State::kGamePlay) && mPlayer.expired()){
+        context->GUIContext->DrawText("LIVES LEFT: " + std::to_string(mLives), 40, CMPUT350::Point2D(mWidth / 2 - 150, mHeight / 2), CMPUT350::Colors::yellow);
+    }
+    if (mState == State::kGameOver) {
+        context->GUIContext->DrawText("GAME OVER", 50, CMPUT350::Point2D(mWidth / 2 - 150, mHeight / 2), CMPUT350::Colors::red);
+    }
 }
 
 /**
- * @brief Handles coin and start messages: coin adds a credit; start begins the game if waiting with a credit.
+ * @brief Handles coin, start, player-died (lives) and enemy-died (score and alive count) messages.
  * @param key The notification message.
- * AI-ASSISTED: skeleton | AI did: gave the Start condition with blanks | I did: wrote the Coin branch and filled the blanks
+ * AI-ASSISTED: skeleton | AI did: gave the Start condition and the death-message branch with blanks | I did: wrote the Coin branch, filled the blanks and fixed the comparison mistakes
  */
 void Galaga::ReceiveNotification(const std::string& key)
 {
@@ -133,6 +202,9 @@ void Galaga::ReceiveNotification(const std::string& key)
             ChangeState(State::kStartup);
         }
     }
+    else if (key == "PlayerDied"){
+        --mLives;
+    }
     else if (key.find("Died") != std::string::npos)
     {
         --mEnemiesAlive;
@@ -143,6 +215,7 @@ void Galaga::ReceiveNotification(const std::string& key)
             points *= 2;
         mScore += points;
     }
+    
 }
 
 /**

@@ -5,6 +5,7 @@
 #include "NotificationManager.h"
 #include "DrawContext.h"
 #include "EngineView.h"
+#include "Enemy.h"
 
 
 /**
@@ -56,10 +57,6 @@ void Player::Update(CMPUT350::GameContext* context)
     }
 }
 
-void Player::LateUpdate(CMPUT350::GameContext* context)
-{
-}
-
 //bool Player::HandleKeyEvent(CMPUT350::GameContext* context, char key) {}
 
 
@@ -72,18 +69,57 @@ void Player::RenderForeground(CMPUT350::GameContext* context)
     context->ScreenContext->DrawRect(CMPUT350::Rect(-20, -20, 40, 40), CMPUT350::Colors::white);
 }
 
+/**
+ * @brief Records a hit when an enemy or an enemy bullet touches the player; ignores the player's own bullets.
+ * @param obj The object collided with.
+ * AI-ASSISTED: skeleton | AI did: gave the structure with blanks and the idea of recording the hit now and notifying later | I did: filled the blanks
+ */
 void Player::CollisionEnter(const std::shared_ptr<CMPUT350::CollisionObject>& obj)
 {
+    auto bullet = std::dynamic_pointer_cast<Bullet>(obj);
+    if (bullet != nullptr)
+    {
+        if (bullet->IsPlayerBullet())
+            return;
+        mHit = true;
+    }
+    else if (std::dynamic_pointer_cast<Enemy>(obj) != nullptr)
+        mHit = true;
 }
 
+/**
+ * @brief Sends "PlayerDied" to Galaga if the player was hit this frame.
+ * @param context Engine context (notification manager).
+ * AI-ASSISTED: skeleton | AI did: gave the structure with blanks | I did: filled the blanks
+ */
+void Player::LateUpdate(CMPUT350::GameContext* context)
+{
+    if (mHit)
+    {
+        mHit = false;
+        context->mNotificationManager->Notify("PlayerDied");
+        Kill();
+    }
+}
+
+/**
+ * @brief Marks the player dead so the engine removes it next frame.
+ * AI-ASSISTED: explained | AI did: said Kill should clear the alive flag | I did: wrote it
+ */
 void Player::Kill()
 {
+    mAlive = false;
 }
 
+
+/**
+ * @brief True until the player has been killed.
+ * @return the alive flag.
+ * AI-ASSISTED: explained | AI did: said to return the flag | I did: wrote it
+ */
 bool Player::IsAlive() const
 {
-    // TODO: Update code
-    return true;
+    return mAlive;
 }
 
 /**

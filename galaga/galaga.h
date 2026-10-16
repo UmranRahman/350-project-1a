@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "GameContext.h"
 #include <memory>
+#include "Player.h"
 
 class Galaga : public CMPUT350::GameObject
 {
@@ -27,9 +28,14 @@ private:
     int mWave = 0;
     int mEnemiesAlive = 0;
     int mStateStartFrame = -1;
+
+    int mDeathFrame = -1;
+
     std::weak_ptr<CMPUT350::GameObject> mSelf;
 
     void SpawnWave(CMPUT350::GameContext *context);
     void ChangeState(State s);
+
+    std::weak_ptr<Player> mPlayer;
 };
 #endif
