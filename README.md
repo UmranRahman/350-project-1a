@@ -98,7 +98,7 @@ Course-provided (ball demo and Galaga branch). The `mBallSsample` flag selects t
 
 ## Project 1b: AI usage, Chat 1 (engine, Player, Bullet, start of Enemy)
 
-Tool: Claude (claude.ai). Chat link: TODO (add the share link for this chat)
+Tool: Claude (claude.ai). Chat link: <https://claude.ai/share/3e0ba032-cf12-4edb-8c36-a563bc2e4df5>
 The AI acted as a TA: explanations, skeletons with blanks, and code review. Labels:
 explained = AI explained, I wrote it. skeleton = AI gave structure with blanks, I filled them.
 provided = AI gave the code, I typed it. Every function also has an `AI-ASSISTED:` comment in
@@ -144,7 +144,7 @@ the source (`grep -rn "AI-ASSISTED" engine galaga`).
 - Bezier: missing factors of 3, last slope coefficient 6 instead of 3, global `t` instead of `localT`.
 - DrawContext: `ReverseTransform` in the wrong order; `Transform(Rect)` with swapped x/y and `box(b, b)` misuse; duplicate `DrawRect`; wrong outline thickness; duplicate `position` in `DrawCircle`; `DrawLine` corners still using `from`/`to`.
 - Called `DrawContext::Transform` as if static in `ProcessCollisions`.
-- Used `Transform(hit)` instead of `ReverseTransform(hit)` in the line-hit branch. TODO: confirm it is fixed.
+- Used `Transform(hit)` instead of `ReverseTransform(hit)` in the line-hit branch. 
 - Player: `pop_back` instead of `push_back`; shapes in world coordinates; `Colors` typo; swapped `CurrObject` and manager; clamp bound 768 instead of 748.
 - Bullet: `null` instead of `nullptr`; killed the bullet immediately on hit.
 - Ran an old binary and read stale output as a result (more than once).
@@ -154,7 +154,7 @@ Skeletons with blanks worked best: I saw the structure, filled in the details, a
 Testing small pieces separately (notification test, Bezier values, collision shape tests) caught bugs
 early. The AI gave one wrong expected value and some blanks that were nearly the answer. My mistakes
 were mostly copying a pattern without adapting it (wrong map, wrong member, wrong coordinate space)
-and running stale builds. TODO: add in your own words what you learned about local vs world space.
+and running stale builds. Learned that whenever we put an object or move it in the world we have to convert world to screen coordinates for the object to move or rotate.
 
 Doc comment text for the engine, Player, and Bullet was written by AI and checked by me. The
 throwaway tests were written by AI and are not part of the submission.
